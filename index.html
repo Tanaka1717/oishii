@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>“オイシイ”人生シミュレーター ──「考えたノリ」の因果エンジン</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            yellow: '#facc15',
+                            amber: '#f59e0b',
+                            coral: '#ff6b6b',
+                            dark: '#0f172a'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Zen Kaku Gothic New"', 'sans-serif'],
+                        maru: ['"Zen Maru Gothic"', 'sans-serif'],
+                        en: ['"Plus Jakarta Sans"', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'pop': '0 8px 0 rgba(15, 23, 42, 0.12)',
+                        'pop-card': '0 10px 0 #0f172a',
+                        'pop-btn': '0 6px 0 #0f172a',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+            background-size: 20px 20px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Text Motion: Soft Fade-in */
+        @keyframes fadeInSoft {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-soft {
+            animation: fadeInSoft 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Dissolve Screen Transitions */
+        .view-section {
+            transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+            opacity: 1;
+            transform: scale(1);
+        }
+        .view-section.dissolve-hidden {
+            opacity: 0;
+            transform: scale(0.985);
+            pointer-events: none;
+        }
+
+        /* Large Unlock Keyframe Animations (1.5s Duration) */
+        @keyframes bigUnlockShake {
+            0% { transform: scale(1) rotate(0deg); }
+            15% { transform: scale(1.08) rotate(-8deg); }
+            30% { transform: scale(1.15) rotate(8deg); }
+            45% { transform: scale(1.2) rotate(-10deg); }
+            60% { transform: scale(1.26) rotate(10deg); }
+            75% { transform: scale(1.32) rotate(-12deg); }
+            90% { transform: scale(1.38) rotate(12deg); }
+            100% { transform: scale(1.42) rotate(0deg); }
+        }
+
+        @keyframes bigBadgePop {
+            0% { transform: scale(0.2) translateY(60px); opacity: 0; }
+            65% { transform: scale(1.18) translateY(-12px); opacity: 1; }
+            85% { transform: scale(0.96) translateY(4px); }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .animate-big-unlock {
+            animation: bigUnlockShake 1.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        .animate-big-badge {
+            animation: bigBadgePop 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @media print {
+            body { background: white !important; }
+            header, footer, #home-view, #unlock-view, #result-view, .no-print { display: none !important; }
+            #qr-sheet-view { display: block !important; opacity: 1 !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-300 selection:text-slate-900">
+
+    <header class="bg-white/95 backdrop-blur border-b-2 border-slate-900 sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+            <button onclick="navigateTo('home-view')" class="flex items-center gap-3 select-none text-left group focus:outline-none">
+                <div class="w-10 h-10 rounded-2xl bg-amber-400 border-2 border-slate-900 flex items-center justify-center text-slate-900 shadow-[2px_2px_0px_#0f172a] shrink-0 p-1 group-hover:scale-105 transition-transform">
+                    <svg class="w-full h-full" viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 70 26 C 70 14 90 14 90 26 C 90 48 70 48 70 26 Z" fill="#ff5c7a"/>
+                        <path d="M 16 26 C 24 48 48 58 68 58 C 72 58 70 38 70 26 C 70 14 90 14 90 26 C 90 38 91 52 104 26" 
+                              stroke="#0f172a" 
+                              stroke-width="8" 
+                              stroke-linecap="round" 
+                              stroke-linejoin="round"/>
+                        <line x1="80" y1="24" x2="80" y2="42" 
+                              stroke="#0f172a" 
+                              stroke-width="7.5" 
+                              stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-maru font-black text-base sm:text-lg text-slate-900 tracking-tight flex items-center gap-1.5 group-hover:text-amber-600 transition-colors">
+                        “オイシイ”人生シミュレーター
+                    </h1>
+                </div>
+            </button>
+
+            <button onclick="toggleQRSheet()" class="text-xs px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-amber-400 hover:bg-amber-300 font-black text-slate-900 transition-all shadow-[2px_2px_0px_#0f172a] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center gap-1.5 shrink-0">
+                <i class="fa-solid fa-qrcode text-slate-900"></i>
+                <span class="text-xs font-maru">展示用QR発行</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-6 flex-grow w-full relative">
+
+        <!-- HOME VIEW -->
+        <section id="home-view" class="view-section space-y-8 text-center py-4">
+            
+            <div class="space-y-6 pt-4">
+                <div class="inline-flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 rounded-3xl bg-amber-400 border-3 border-slate-900 shadow-pop-card p-4 mx-auto animate-bounce" style="animation-duration: 2.5s;">
+                    <svg class="w-full h-full" viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 70 26 C 70 14 90 14 90 26 C 90 48 70 48 70 26 Z" fill="#ff5c7a"/>
+                        <path d="M 16 26 C 24 48 48 58 68 58 C 72 58 70 38 70 26 C 70 14 90 14 90 26 C 90 38 91 52 104 26" 
+                              stroke="#0f172a" 
+                              stroke-width="8.5" 
+                              stroke-linecap="round" 
+                              stroke-linejoin="round"/>
+                        <line x1="80" y1="24" x2="80" y2="42" 
+                              stroke="#0f172a" 
+                              stroke-width="8" 
+                              stroke-linecap="round"/>
+                    </svg>
+                </div>
+
+                <div class="space-y-3 px-2">
+                    <h2 class="animate-fade-in-soft text-3xl sm:text-5xl md:text-6xl font-black font-maru tracking-tight leading-tight text-amber-400 select-none whitespace-nowrap" style="-webkit-text-stroke: 2.5px #0f172a; paint-order: stroke fill; text-shadow: 3px 3px 0 #0f172a;">
+                        “オイシイ”人生シミュレーター
+                    </h2>
+                    <p class="text-base sm:text-xl font-bold text-amber-700 font-maru">
+                        どんな経験も、あなたの価値になる。
+                    </p>
+                </div>
+
+                <p class="text-xs sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed px-4 font-bold">
+                    迷ったら、一歩踏み出してみよう。<br>
+                    アタリもハズレも、全部“オイシイ”。<br>
+                    経験のその先に、豊かな未来が待っている。
+                </p>
+            </div>
+
+            <div class="space-y-3 text-left pt-2 max-w-3xl mx-auto">
+                <div class="text-xs font-black text-slate-500 uppercase tracking-wider px-1 font-maru">
+                    体験グッズを選択してスタート
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <!-- EXPERIENCE 01: TARAI (Sky Blue) -->
+                    <button onclick="startExperience('tarai')" class="bg-white border-2 border-slate-900 rounded-2xl p-4 text-center space-y-2 hover:bg-sky-50 hover:border-slate-900 shadow-[4px_4px_0px_#0f172a] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#0f172a] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-sky-400 border border-slate-900 flex items-center justify-center text-xl text-slate-900 mx-auto shadow-[2px_2px_0px_#0f172a] group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-arrows-down-to-line"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-black text-sky-600 block">EXPERIENCE 01</span>
+                            <span class="text-sm font-black text-slate-900 font-maru">頭上直撃の金ダライ</span>
+                        </div>
+                    </button>
+
+                    <!-- EXPERIENCE 02: WASABI (Emerald) -->
+                    <button onclick="startExperience('wasabi')" class="bg-white border-2 border-slate-900 rounded-2xl p-4 text-center space-y-2 hover:bg-emerald-50 hover:border-slate-900 shadow-[4px_4px_0px_#0f172a] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#0f172a] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-400 border border-slate-900 flex items-center justify-center text-xl text-slate-900 mx-auto shadow-[2px_2px_0px_#0f172a] group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-black text-emerald-600 block">EXPERIENCE 02</span>
+                            <span class="text-sm font-black text-slate-900 font-maru">激辛のわさび寿司</span>
+                        </div>
+                    </button>
+
+                    <!-- EXPERIENCE 03: TEA (Lime) -->
+                    <button onclick="startExperience('tea')" class="bg-white border-2 border-slate-900 rounded-2xl p-4 text-center space-y-2 hover:bg-lime-50 hover:border-slate-900 shadow-[4px_4px_0px_#0f172a] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#0f172a] transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-lime-400 border border-slate-900 flex items-center justify-center text-xl text-slate-900 mx-auto shadow-[2px_2px_0px_#0f172a] group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-mug-hot"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-black text-lime-700 block">EXPERIENCE 03</span>
+                            <span class="text-sm font-black text-slate-900 font-maru">苦汁のセンブリ茶</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- UNLOCK VIEW (1.5s Unlock Motion) -->
+        <section id="unlock-view" class="view-section hidden dissolve-hidden space-y-6 max-w-2xl mx-auto">
+            
+            <div class="bg-white border-2 border-slate-900 rounded-3xl p-6 sm:p-8 text-center space-y-6 shadow-pop-card relative overflow-hidden">
+
+                <div class="py-2 flex flex-col items-center justify-center min-h-[190px]">
+                    
+                    <!-- Lock box (Theme colored) -->
+                    <div id="lock-icon-box" class="cursor-pointer group flex flex-col items-center gap-4" onclick="triggerUnlockAnimation()">
+                        <div id="main-lock-box" class="w-32 h-32 rounded-3xl border-3 border-slate-900 flex items-center justify-center text-5xl shadow-[6px_6px_0px_#0f172a] group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-lock" id="main-lock-icon"></i>
+                        </div>
+                    </div>
+
+                    <!-- Achievement badge (Theme colored) -->
+                    <div id="achievement-badge-box" class="hidden flex flex-col items-center gap-3 w-full">
+                        
+                        <div id="badge-crown-tag" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border-2 border-slate-900 text-slate-900 text-xs sm:text-sm font-black font-maru tracking-wider shadow-[2px_2px_0px_#0f172a] animate-bounce">
+                            <i class="fa-solid fa-crown text-slate-900"></i>
+                            <span>実績解除</span>
+                        </div>
+
+                        <div id="badge-item-icon-box" class="w-32 h-32 rounded-3xl border-3 border-slate-900 flex items-center justify-center text-5xl text-slate-900 shadow-[6px_6px_0px_#0f172a] animate-big-badge mt-1">
+                            <i id="badge-item-icon" class="fa-solid fa-arrows-down-to-line"></i>
+                        </div>
+
+                        <div class="space-y-1 mt-1">
+                            <h2 id="badge-item-title" class="text-2xl sm:text-3xl font-black text-slate-900 font-maru tracking-tight">
+                                頭上直撃の金ダライ
+                            </h2>
+                            <p id="badge-item-desc" class="text-xs text-slate-500 font-bold">
+                                身体的リスクに立ち向かった勇者
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <form id="quick-profile-form" onsubmit="generate100Outcomes(event)" class="space-y-4 text-left pt-2 border-t-2 border-slate-100">
+                    
+                    <div class="bg-slate-50 border-2 border-slate-900 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-[2px_2px_0px_#0f172a]">
+                        <div class="text-sm font-black text-slate-900 font-maru flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-amber-400 border border-slate-900 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-user text-slate-900"></i>
+                            </span>
+                            <span>今のあなたは？</span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="text-[11px] font-black text-slate-600 block mb-1">性別</label>
+                                <select id="sel-gender" class="w-full bg-white border-2 border-slate-900 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-amber-50 transition-colors">
+                                    <option value="女性" selected>女性</option>
+                                    <option value="男性">男性</option>
+                                    <option value="その他">その他</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-black text-slate-600 block mb-1">年代</label>
+                                <select id="sel-age" class="w-full bg-white border-2 border-slate-900 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-amber-50 transition-colors">
+                                    <option value="20代" selected>20代</option>
+                                    <option value="10代">10代</option>
+                                    <option value="30代">30代</option>
+                                    <option value="40代">40代</option>
+                                    <option value="50代〜">50代〜</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-black text-slate-600 block mb-1">身分・職業</label>
+                                <select id="sel-job" class="w-full bg-white border-2 border-slate-900 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-amber-50 transition-colors">
+                                    <option value="学生・美大生" selected>学生・美大生</option>
+                                    <option value="クリエイター">クリエイター</option>
+                                    <option value="会社員">会社員</option>
+                                    <option value="フリーランス">フリーランス</option>
+                                    <option value="その他">その他</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="generate-trigger-btn" class="w-full py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 border-2 border-slate-900 text-slate-900 font-maru font-black text-base sm:text-lg tracking-tight shadow-[0_6px_0_#0f172a] active:translate-y-[4px] active:shadow-[0_2px_0_#0f172a] transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-sparkles text-slate-900"></i>
+                        <span>“オイシイ未来”を見てみる</span>
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- RESULT VIEW (Always 1 to 100 Guarantee) -->
+        <section id="result-view" class="view-section hidden dissolve-hidden space-y-5 max-w-3xl mx-auto">
+            
+            <div class="bg-white border-2 border-slate-900 rounded-3xl p-5 sm:p-7 space-y-4 shadow-pop-card">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-en font-black px-3 py-1 rounded-full bg-amber-400 border-2 border-slate-900 text-slate-900 uppercase shadow-[2px_2px_0px_#0f172a]">
+                        RESULT
+                    </span>
+                    <span class="text-xs font-bold text-slate-500 whitespace-nowrap" id="res-target-pill">金ダライ × 20代女性 (学生・美大生)</span>
+                </div>
+
+                <div class="flex items-center gap-4 sm:gap-6 pt-1">
+                    <div id="res-dynamic-illustration" class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shrink-0">
+                    </div>
+
+                    <div class="space-y-1 flex-grow">
+                        <h2 id="res-summary-one-sentence" class="text-sm sm:text-base font-maru font-black text-slate-900 leading-snug sm:leading-relaxed">
+                        </h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 px-1">
+                <div class="text-xs sm:text-sm font-black text-slate-900 font-maru flex items-center gap-2 whitespace-nowrap min-w-0">
+                    <span class="w-6 h-6 rounded-full bg-amber-400 border-2 border-slate-900 text-slate-900 flex items-center justify-center text-xs font-en font-black shrink-0">100</span>
+                    <span class="truncate sm:overflow-visible">経験を積んだあなたに起きる、オイシイ100の可能性。</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="copyAllOutcomes()" class="text-xs px-3.5 py-1.5 rounded-xl border-2 border-slate-900 bg-white hover:bg-slate-50 text-slate-900 font-bold transition-all shadow-[2px_2px_0px_#0f172a] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center gap-1 whitespace-nowrap">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>コピー</span>
+                    </button>
+                    <button onclick="navigateTo('unlock-view')" class="text-xs px-3.5 py-1.5 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all flex items-center gap-1 whitespace-nowrap">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>やり直す</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 100 Outcomes Cards Container -->
+            <div class="space-y-2.5" id="outcomes-container">
+            </div>
+
+            <div class="text-center pt-4 pb-12 flex items-center justify-center">
+                <button onclick="navigateTo('home-view')" class="w-full sm:w-auto px-8 py-3.5 rounded-2xl border-2 border-slate-900 bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-black shadow-[3px_3px_0px_#0f172a] transition-all inline-flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-house"></i>
+                    <span>ホームに戻る</span>
+                </button>
+            </div>
+
+        </section>
+
+
+        <!-- QR SHEET VIEW -->
+        <section id="qr-sheet-view" class="view-section hidden dissolve-hidden space-y-6 max-w-3xl mx-auto">
+            <div class="flex items-center justify-between no-print border-b-2 border-slate-200 pb-4">
+                <div>
+                    <h2 class="text-lg font-black text-slate-900 font-maru flex items-center gap-2">
+                        <i class="fa-solid fa-qrcode text-amber-500"></i>
+                        <span>展示グッズ用 QRコード一覧</span>
+                    </h2>
+                    <p class="text-xs text-slate-500">スマホで実際にスキャンして各体験をアンロックできます</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="window.print()" class="text-xs px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black shadow-[2px_2px_0px_#0f172a] transition-all flex items-center gap-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-print"></i>
+                        <span>印刷</span>
+                    </button>
+                    <button onclick="toggleQRSheet()" class="text-xs px-3 py-2 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold transition-all whitespace-nowrap">
+                        閉じる
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                
+                <div class="bg-white border-2 border-slate-900 rounded-3xl p-5 flex flex-col items-center justify-between text-center gap-3 shadow-[4px_4px_0px_#0f172a]">
+                    <div class="space-y-0.5">
+                        <span class="text-[10px] font-en font-black text-sky-500 uppercase tracking-widest">EXPERIENCE 01</span>
+                        <h3 class="text-sm font-black text-slate-900 font-maru">頭上直撃の金ダライ</h3>
+                    </div>
+
+                    <div id="qr-canvas-tarai" class="bg-slate-50 p-2.5 rounded-2xl border-2 border-slate-200"></div>
+
+                    <button onclick="openFromQRSheet('tarai')" class="no-print w-full py-2 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-900 text-xs font-black border border-sky-300 transition-all">
+                        この画面で試す
+                    </button>
+                </div>
+
+                <div class="bg-white border-2 border-slate-900 rounded-3xl p-5 flex flex-col items-center justify-between text-center gap-3 shadow-[4px_4px_0px_#0f172a]">
+                    <div class="space-y-0.5">
+                        <span class="text-[10px] font-en font-black text-emerald-500 uppercase tracking-widest">EXPERIENCE 02</span>
+                        <h3 class="text-sm font-black text-slate-900 font-maru">激辛のわさび寿司</h3>
+                    </div>
+
+                    <div id="qr-canvas-wasabi" class="bg-slate-50 p-2.5 rounded-2xl border-2 border-slate-200"></div>
+
+                    <button onclick="openFromQRSheet('wasabi')" class="no-print w-full py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-xs font-black border border-emerald-300 transition-all">
+                        この画面で試す
+                    </button>
+                </div>
+
+                <div class="bg-white border-2 border-slate-900 rounded-3xl p-5 flex flex-col items-center justify-between text-center gap-3 shadow-[4px_4px_0px_#0f172a]">
+                    <div class="space-y-0.5">
+                        <span class="text-[10px] font-en font-black text-lime-600 uppercase tracking-widest">EXPERIENCE 03</span>
+                        <h3 class="text-sm font-black text-slate-900 font-maru">苦汁のセンブリ茶</h3>
+                    </div>
+
+                    <div id="qr-canvas-tea" class="bg-slate-50 p-2.5 rounded-2xl border-2 border-slate-200"></div>
+
+                    <button onclick="openFromQRSheet('tea')" class="no-print w-full py-2 rounded-xl bg-lime-100 hover:bg-lime-200 text-lime-900 text-xs font-black border border-lime-300 transition-all">
+                        この画面で試す
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-slate-200 py-4 text-center text-xs text-slate-400 bg-white">
+        <div class="max-w-4xl mx-auto px-4 font-medium">
+            武蔵野美術大学 卒業制作2026 『“オイシイ”人生シミュレーター』 田中 風羽子
+        </div>
+    </footer>
+
+    <script>
+        const ITEMS = {
+            tarai: {
+                id: 'tarai',
+                name: '頭上直撃の金ダライ',
+                icon: 'fa-solid fa-arrows-down-to-line',
+                desc: '身体的リスクに立ち向かった勇者',
+                themeBg: 'bg-sky-50',
+                themeBorder: 'border-sky-400',
+                themeText: 'text-sky-500',
+                badgeGrad: 'bg-gradient-to-tr from-sky-400 via-cyan-300 to-sky-200',
+                tagBg: 'bg-sky-400',
+                baseOutcomes: [
+                    'タライの衝撃で頭のモヤモヤが一気に晴れて、先延ばしにしていた作業が2時間で終わる。',
+                    '金属の爆音で目が冴え渡り、翌朝いつもより1時間早く起きて優雅に朝カフェができる。',
+                    '痛みに耐えて笑った写真がグループLINEで共有され、困ったときに真っ先に頼られる愛されキャラになる。',
+                    '痛がるリアクションがツボに入った友人が、帰り道に「今日最高だったわ」とアイスを奢ってくれる。',
+                    '「タライ食らったことある？」という他愛のない雑談から、気まずかった相手と5分で打ち解けられる。',
+                    '直撃を無傷で乗り切ったことで、来週の緊張する本番が「タライより楽勝」と思えるようになる。',
+                    '首をすくめた反射動作で肩甲骨周りがほぐれ、長引いていたデスクワークの肩こりがちょっと軽くなる。',
+                    '「自分からハズレを引きに行った度胸」を評価され、サークルやチームで一番頼れるポジションを獲得する。',
+                    'タライが落ちてきた瞬間のリアクションが身内で定番ネタになり、集まりのたびに乾杯の音頭を任される。',
+                    '張り詰めた空気を一撃で爆笑に変えたことで、その場にいた全員との心理的距離が一気に縮まる。',
+                    '「タライの生存者」という謎の肩書きができ、初対面の自己紹介で確実に名前を覚えてもらえる。',
+                    '痛い目に遭っても笑っていられる余裕が生まれ、電車で足を踏まれても仏のような笑顔で許せるようになる。',
+                    '頭頂部に刺激を受けたことでひらめきが降りてきて、悩んでいた企画のタイトルが即決する。',
+                    '身を挺して場を盛り上げた姿勢に好感を持たれ、気になっていた人から「さっき面白かったよ」と声をかけられる。',
+                    '「タライが落ちてきても平気だった」という安心感により、新しい挑戦へのフットワークが劇的に軽くなる。',
+                    '金属が頭に当たる感触を身体で知ったことで、コントやアニメのリアクションシーンをより深く楽しめる。',
+                    'その場の全員から「よくやった」と背中を叩かれ、自己肯定感がじわじわと急上昇する。',
+                    'タライが落ちた後の静寂と歓声のギャップを体験し、人の話を引き込む間の取り方が自然と上手くなる。',
+                    'ハズレを引いたおかげでその日の順番決めで免除され、一番おいしいデザートを優先して選べる。',
+                    '何気ない日常に強烈な非日常が刻まれ、死ぬ前に思い出す楽しかった思い出が確実に1つ増える。',
+                    '頭のコリが物理的に刺激されたことで目の奥の疲れが取れ、PC作業のスピードが倍になる。',
+                    'その場の一体感を生み出した立役者として、次回の遊びの計画で真っ先に行き先の希望を聞いてもらえる。',
+                    '「あの音やばかったよね」と後日別の友達にも話が広がり、自分の知らないところで知名度が上がる。',
+                    '無防備に驚いた顔を見せたことで気取らない性格が伝わり、後輩から気軽に相談されるようになる。',
+                    '痛みを笑いに変えた達成感で自己効力感が高まり、苦手な相手への連絡がスムーズに送れる。',
+                    '「タライを落とされた時の回避ポーズ」というしょうもない特技が生まれ、宴会芸として重宝される。',
+                    'タライの衝撃でアドレナリンが出て、帰宅後にダラダラスマホを見ずにすぐお風呂に入れる。',
+                    '「何があってもネタにできる」という確信が持てたことで、日常の小さな失敗で落ち込まなくなる。',
+                    '衝撃で一瞬フリーズした姿がシュールで面白かったと、動画を撮っていた友人から感謝される。',
+                    '金ダライの光沢を間近で観察したことで、身の回りの金属プロダクトの質感に愛着が湧く。',
+                    '「この人は場の空気を最優先してくれる」という信頼を得て、大事な相談を一番に持ちかけられる。',
+                    '恐怖心を乗り越えてスツールに座った度胸が自信になり、背筋がスッと伸びて立ち姿が綺麗になる。',
+                    'ハズレを引いた者同士の謎の連帯感が生まれ、同じ境遇の仲間と一生語り合える絆ができる。',
+                    '「タライの音って本当に漫画と同じなんだ」という一次情報を手に入れ、雑談の解像度が上がる。',
+                    '思いっきり声を出して笑ったことで横隔膜が動き、お腹周りの血行が良くなって体が温まる。',
+                    '日常の退屈なルーティンが完全にリセットされ、明日の朝起きるのが少しだけ楽しみになる。',
+                    '「あの時タライ被ってたよね」と就活や懇親会でツカミとして使えて場を和ませられる。',
+                    '自分から危険に飛び込むプレイフルな姿勢が評価され、面白い企画チームにスカウトされる。',
+                    '痛みに耐えた後に飲んだ一杯の水が、人生最高レベルに染み渡って幸福感に包まれる。',
+                    '「ハズレすら楽しい」という感覚が体に染みつき、人生のあらゆる出来事をポジティブに回収できる。',
+                    '金属の反響音を至近距離で聴いたことで耳の感覚が研ぎ澄まされ、音楽を聴くのが楽しくなる。',
+                    '落ちてくるまでの数秒間のスリルが心地よい刺激になり、最近忘れていた冒険心が蘇る。',
+                    '「あいつはノリが良い」と周囲の共通認識になり、面白いイベントやご飯の誘いが倍増する。',
+                    '頭に受けた衝撃の勢いで悩んでいた二者択一の決断があっさり下せるようになる。',
+                    'タライの底の平らさを頭皮で感じたことで、頭皮マッサージに通ったかのような爽快感を得る。',
+                    '誰かがミスをした時に「タライに比べたら平気」と優しく声をかけてあげられる器ができる。',
+                    'その場にいた全員の笑顔を独り占めにした快感で、人前で話すことへの苦手意識が消える。',
+                    '「タライを体験したことがある人」という希少なステータスが密かにアンロックされる。',
+                    '帰りの電車でふと思い出して笑いそうになり、マスクの中で口角が上がりっぱなしになる。',
+                    '数年後の同窓会でも「あの時のタライ落とし」として絶対に笑い合える鉄板の記憶が確定する。',
+                    '頭にカツンと衝撃を受けたことで、長年悩んでいた買い物の決心があっさりつく。',
+                    '友人が撮ってくれたスローモーション動画の表情が絶妙で、見るたびに元気が出る。',
+                    '「痛いけど美味しい」というバラエティの極意を体得し、テレビのお笑いを2倍楽しめる。',
+                    '身代わりになってくれた優しさに感動した同席者が、次のカフェ代を出してくれる。',
+                    '頭頂部のツボが刺激されたおかげで、長引いていたデスクワークの目のカスミが取れる。',
+                    '「自分は身体を張れる人間だ」という根拠のない自信がつき、新しい趣味を始められる。',
+                    'ハズレを引いた時の完璧なリアクションを褒められ、次回イベントの司会を頼まれる。',
+                    'タライの落下スピードを体感したことで、身の回りの落下物に対する反射神経が鋭くなる。',
+                    '落ち込んでいる友達にこの写真を見せるだけで、一瞬で笑顔を取り戻させることができる。',
+                    '「タライの衝撃で覚醒した」という持ちネタで、初対面の懇親会を完全に自分のペースにできる。',
+                    '痛みを恐れずに前に出た姿勢が、密かに好意を寄せていた人の心にしっかりと刺さる。',
+                    '一撃で眠気が完全に吹き飛んだおかげで、溜まっていた連絡を一気に終わらせられる。',
+                    '「あの瞬間の空気の一体感」が忘れられず、人を笑顔にする企画に興味が湧いてくる。',
+                    '頭に物が当たる怖さを克服したことで、スポーツやアクティビティでの思い切りが良くなる。',
+                    '何気ない日常の中で「今日はタライが落ちてこないだけで平和だな」と感謝の心が芽生える。',
+                    '友達から「お前がいてくれて本当に良かった」と感謝され、深い充実感に満たされる。',
+                    'タライの金属の重みを頭で測れたことで、日常のモノの重さに対する感覚が研ぎ澄まされる。',
+                    '笑い転げる周囲の顔を見たことで、自分が人に与えられるポジティブな影響力に気づく。',
+                    '「ハズレを引くのも悪くない」と心から思えたことで、くじ引きやガチャを気楽に楽しめる。',
+                    'タライ落としの生存体験が、将来誰かに語れる最高に愉快な昔話になる。',
+                    '頭がスッキリしたことで集中力が持続し、読もうと思って積んでいた本を一気読みできる。',
+                    '「痛がる顔が愛嬌満点だった」と意外な角度から褒められ、思わぬところでモテ期が始まる。',
+                    '場の空気が沈みかけたときに自分から話題を振れるようになり、集まりの救世主になる。',
+                    'タライの音で耳の奥がスッキリし、周りの人の話す声がいつもよりクリアに聞き取れる。',
+                    '「身体を張った後の爽快感」を知ったことで、サウナや筋トレの効果をより深く味わえる。',
+                    '周囲から「度胸がある」と認められ、大事なプロジェクトの発表者に推薦される。',
+                    'ハズレを引いた瞬間の自分の顔を客観視できたことで、写真写りの表情筋コントロールが上手くなる。',
+                    '「あのタライのやつ」としてグループのレジェンドになり、困ったときに味方が増える。',
+                    '日常のちょっとした理不尽に出くわしても「タライよりはマシ」と寛容に受け流せる。',
+                    'タライを被った瞬間の光景が目に焼き付き、シュールな絵やデザインのアイデアが湧き出る。',
+                    '痛みに耐えて笑ってみせた強さが、相手に「精神的に自立した魅力的な人」と映る。',
+                    '頭部の血行が良くなったことで、翌朝の髪のセットがいつもよりスムーズに決まる。',
+                    '「タライの落ちてくる角度」について熱く語れるようになり、理系の人と意気投合できる。',
+                    '身を削って笑いを生み出した経験が、チームで何かを成し遂げる時の強い原動力になる。',
+                    'ハズレを引いた時のリアクション動画を見返すたびに、当時の楽しさが鮮明に蘇る。',
+                    '「あの人は裏表がない」と周囲から信頼され、グループ内の相談役として頼りにされる。',
+                    '頭が冴え渡った勢いで、ずっと整理したかったスマホの写真フォルダを一気に整理できる。',
+                    'タライの衝撃で全身の筋肉が一度キュッと締まり、姿勢のバランスが自然と整う。',
+                    '「失敗しても笑えれば勝ち」という人生哲学が身につき、何事にも恐れず挑戦できるようになる。',
+                    '友達との思い出のアルバムに、圧倒的にインパクトのあるハイライト写真が追加される。',
+                    '痛い目を笑いに変えたあなたの姿を見て、周囲の引っ込み思案な人も勇気をもらえる。',
+                    '「あのタライ美味しかったな」と自分でも思えるようになり、人生の楽しむハードルが下がる。',
+                    '頭のモヤが晴れたおかげで、週末のお出かけプランがサクサク決まって充実した休日になる。',
+                    '「普通なら避けることをやってのけた」という達成感で、自己肯定感が一段階アップする。',
+                    '飲み会で話題に困った時のキラーカードとして、このエピソードが一生涯あなたを助けてくれる。',
+                    'タライの直撃音の余韻で心がスカッとし、ここ数日のストレスが綺麗に洗い流される。',
+                    '「あいつはいつでも場を明るくしてくれる」と評価され、大事な食事会に必ず呼ばれる。',
+                    'どんな予想外のアクシデントが起きても、笑顔で状況を面白がれる無敵のメンタルが手に入る。',
+                    'タライの下に自ら進み出たその一歩が、これからの人生で新しい扉を開く確かな自信になる。',
+                    '死ぬ瞬間に「あの日タライを落として本当に良かった」と笑顔で振り返ることができる。',
+                    '頭のツボ刺激で全身がポカポカ温まり、今夜ぐっすり熟睡できる。',
+                    '「タライを直撃した仲間」として、一生モノの固い友情が生まれる。',
+                    'アクシデントを笑いに変える話術が向上し、プレゼンのツカミが完璧に決まる。',
+                    '金属音のインパクトで日常の些細な悩みが一瞬で吹き飛ぶ。',
+                    'どんな困難にも笑顔で立ち向かう強いマインドセットが完成する。'
+                ]
+            },
+            wasabi: {
+                id: 'wasabi',
+                name: '激辛のわさび寿司',
+                icon: 'fa-solid fa-utensils',
+                desc: '辛さを引き受け場を盛り上げた英雄',
+                themeBg: 'bg-emerald-50',
+                themeBorder: 'border-emerald-400',
+                themeText: 'text-emerald-500',
+                badgeGrad: 'bg-gradient-to-tr from-emerald-400 via-teal-300 to-emerald-200',
+                tagBg: 'bg-emerald-400',
+                baseOutcomes: [
+                    'わさびの強烈な刺激で鼻がスーッと通り、今夜ぐっすり熟睡できて翌朝の目覚めが最高になる。',
+                    '涙目で耐えている姿を見た同席者から「身代わりありがとう」と感謝され、次回の食事会で席を隣にしてくれる。',
+                    '辛さに悶絶したリアクションをきっかけに、気になっていた人から「大丈夫だった？笑」と個別にLINEが来る。',
+                    'ハズレを引いた主役としてその場の会計が少し割り引かれ、ちょっと得した気分で帰れる。',
+                    '「この前ロシアンわさび引いてさ」という話で、初対面の人とのアイスブレイクが5秒で成功する。',
+                    '辛味成分の血行促進効果で全身がポカポカ温まり、冷え切っていた足先が快適になる。',
+                    '必死にお茶をガブ飲みしたことで水分補給が完璧になり、翌朝の肌の調子がなぜか良くなる。',
+                    '崩壊した顔を見せ合ったことでプライドの壁が壊れ、同期との距離が一気に親友レベルに縮まる。',
+                    '味覚の受容体がリセットされ、その後に食べた普通の料理が信じられないくらい美味しく感じる。',
+                    '「辛いものを引いても場を壊さず笑わせた」という立ち回りが気に入られ、今度ランチに誘ってもらえる。',
+                    '涙を流して感情を解放したことで、最近溜まっていたモヤモヤしたストレスが綺麗に吹き飛ぶ。',
+                    '辛さに耐えた経験によって、激辛料理店の看板メニューを涼しい顔で注文できるようになる。',
+                    '「あの時わさび食べた人だよね」と後日別の人から声をかけられ、思わぬところで人脈が広がる。',
+                    '食卓の主役権を完全に握ったことで、自分が話したかった話題を全員が前のめりで聞いてくれる。',
+                    '無防備な素顔をさらけ出したことで親しみやすさが爆上がりし、後輩から気軽に相談されるようになる。',
+                    '鼻腔が奇跡的に開通したおかげで、明日飲むコーヒーの香りがいつもの2倍クリアに感じられる。',
+                    '「最悪のハズレを引いたのに結果楽しかった」という成功体験から、日常の小さな不運を笑い飛ばせるようになる。',
+                    'ハズレを引いた記念にみんなで撮った変顔写真が、LINEグループのアイコンに採用される。',
+                    '刺激でアドレナリンが出たおかげで、帰宅後にダラダラせずスムーズにお風呂に入って早く寝られる。',
+                    '「あの時のわさび寿司」として数年後の集まりでも絶対に盛り上がれる鉄板エピソードが手に入る。',
+                    '強烈な辛さに耐え抜いたことで、苦手だったわさび入りの大人な寿司が平気で食べられるようになる。',
+                    '悶絶する姿を見た友人が「お前最高だな」と笑顔で背中を叩いてくれ、確かな友情を実感する。',
+                    '鼻から抜けるツーンとした刺激で頭が冴え渡り、翌日の仕事や課題の集中力が持続する。',
+                    '「ハズレを引いても笑顔でいられる人」として、周囲からの好感度が急上昇する。',
+                    '辛さを紛らわせるために食べたガリの美味しさに目覚め、お寿司の楽しみ方が一段階深まる。',
+                    '身を挺して笑いを作った姿勢が評価され、チーム内での発言権が自然と増える。',
+                    '涙を流したことでドライアイが潤い、ここ数日の目の疲れがスッキリ解消する。',
+                    '「わさびを引いた時のリアクション顔」が持ちネタになり、集まりのたびにアンコールされる。',
+                    '辛味で代謝が上がったおかげで、翌朝の顔のむくみがすっきり取れて写真写りが良くなる。',
+                    '食卓にいた全員の警戒心を一瞬で解き、初対面の集まりがまるで旧友の集まりのようになる。',
+                    '「あの辛さに比べたら今のプレッシャーなんて楽勝」と、大事な場面で落ち着いて行動できる。',
+                    'わさびを引いてくれたお礼として、幹事の友人が次回の幹事を代わってくれる。',
+                    '素直に悶絶する姿が嘘偽りのない人柄として伝わり、周囲からの信頼を獲得できる。',
+                    '辛さに耐えながらお茶を飲む姿がシュールで面白かったと、後から動画を見せられて大笑いできる。',
+                    '鼻が完全に通ったおかげで、今夜の睡眠時の息苦しさが綺麗になくなる。',
+                    '「何でも楽しそうに食べる人」という印象がつき、美味しいご飯の誘いが急増する。',
+                    '辛味で舌が敏感になったことで、日常の薄味の出汁やスープの繊細な旨味に気づける。',
+                    'ハズレを引いたおかげで、その後のじゃんけんや席替えで圧倒的に有利な配慮をしてもらえる。',
+                    '自分のリアクションで場がドッと沸いた快感を知り、人前で話すことへの自信が湧いてくる。',
+                    '「あの時のわさび寿司」として、友人同士の語り草になる伝説の夜が1つ完成する。',
+                    '辛さで一瞬息が止まったことで、普段浅くなりがちだった呼吸を深く整え直すことができる。',
+                    '涙目のまま笑った表情がやけに魅力的だったと、後日友人からこっそり褒められる。',
+                    '「ハズレを引いてもこれだけ美味しいなら儲けもの」と、損得勘定から解放される。',
+                    '辛いものを食べた後の甘いデザートが、人生で一番美味しく感じられて感動する。',
+                    '「あいつはどんな球でも打ち返してくれる」と確信され、トークの中心に置いてもらえる。',
+                    'わさびの刺激で全身の細胞がシャキッと目覚め、帰りの夜道が足取り軽く感じられる。',
+                    '「痛い目に遭ったのに楽しそう」なあなたの姿を見て、周りの人も前向きな気分になれる。',
+                    'ハズレを引いた人専用の特別なトークテーマが生まれ、初対面の人と一瞬で打ち解けられる。',
+                    '食卓のピンチを笑いに昇華させた経験が、日常の人間関係のトラブル解決力につながる。',
+                    '何気ない食事会が忘れられない特別なイベントに化け、最高の思い出として心に残る。',
+                    '辛さに悶絶した直後に飲んだお茶の温かさが心に染み、日常の小さな優しさに感謝できる。',
+                    '「あのわさびを耐えた」という謎の根性がつき、筋トレの最後の1回を踏ん張れるようになる。',
+                    '顔を真っ赤にして笑い合った仲間と、気兼ねなく何でも話せる本物の関係が築ける。',
+                    '辛味の刺激で胃液の分泌が促され、食べたものがスムーズに消化されて胃もたれしない。',
+                    '「お前のおかげで今日めっちゃ楽しかった」と帰り際に言われて心が満たされる。',
+                    'わさびの香りの奥にある本物の風味に気づき、ちょっと良いお寿司屋さんに行きたくなる。',
+                    'ハズレを引いた時の完璧な立ち回りが、周囲から高く評価される。',
+                    '辛さで涙を流した後の爽快感が心地よく、まるでサウナに入ったかのように整う。',
+                    '「あいつはいつでも身体を張ってくれる」と信頼され、次のイベントでも指名される。',
+                    '日常の小さな不都合やアクシデントを「わさび寿司みたいなもの」と笑って受け止められる。',
+                    '鼻の通りが良くなったことで、季節の花の香りや外の空気を胸いっぱいに吸い込める。',
+                    '涙目で笑っている写真が思いがけずエモい雰囲気になり、SNSでたくさんのいいねをもらえる。',
+                    '「辛いものを食べた後の水が一番うまい」という真理を悟り、シンプルな幸福に気づく。',
+                    '食卓の沈黙を自分のリアクション一発で打ち消したことで、会話の場を回す自信がつく。',
+                    '「ハズレを引いたからこそ今の盛り上がりがある」と、自分の役割を誇らしく思える。',
+                    '辛さに悶絶する姿が語り継がれ、実家に帰ったときの定番の笑い話になる。',
+                    'わさびの殺菌作用と血行促進により、口内環境がスッキリして爽快な気分が続く。',
+                    '「この人と一緒にご飯を食べると楽しい」と確信され、次のご飯に誘われる。',
+                    '辛さに耐えながらも見せた笑顔が、同席していた人の緊張を完全に解きほぐす。',
+                    '日常の退屈な食事の時間が、一生忘れられないエンターテインメントへと昇華される。',
+                    '鼻腔がスーッと通った状態で寝ることで、朝まで一度も起きずに深い睡眠が得られる。',
+                    '「あの時わさび食べてくれたお礼」として、友人からちょっとしたプレゼントをもらえる。',
+                    '辛味でアドレナリンが出たおかげで、帰り道にスーパーで買い忘れていた日用品を思い出せる。',
+                    '「ハズレを引くのも才能のうち」と前向きに捉えられ、自分の運の強さを実感する。',
+                    '涙を流して笑い転げたことで腹筋が刺激され、翌朝ちょっとお腹が引き締まる。',
+                    'わさびの刺激に耐えた度胸が評価され、大事な場面での発言役を任される。',
+                    '「あのわさびは本当にやばかった」と共感し合えることで、その場にいた仲間との絆が深まる。',
+                    '日常の些細なイライラが「あの辛さに比べれば可愛いもの」と寛容に受け流せるようになる。',
+                    '辛味で味覚がリセットされたことで、明日の朝食のトーストとコーヒーが劇的に美味しくなる。',
+                    '不都合を自ら引き受けて場を明るくしたあなたの姿勢が、周囲にとって最高の癒やしになる。',
+                    '「何を食べても美味しくリアクションできる」という特技が身につき、食レポ上手になる。',
+                    '涙目のままピースした写真が、アルバムの中で一番思い出深い一枚になる。',
+                    '辛さを乗り越えた後の達成感で気分が高揚し、明日からの予定にやる気が出る。',
+                    '「あの時の一撃」を思い出すだけでいつでも笑えるようになり、ご機嫌な時間が増える。',
+                    '食卓のハズレをチャンスに変えた経験が、これからの人生のピンチをチャンスに変える力になる。',
+                    '周囲から「本当にいい奴だな」と心の底から思われ、困ったときに助けてくれる味方が増える。',
+                    '鼻の通りが良くなったことで集中力が研ぎ澄まされ、読書や作業が驚くほど捗る。',
+                    '「あの激辛寿司を乗り切った」という事実が、ちょっとした自信として胸に残り続ける。',
+                    '美味しいものも辛いものも全部ひっくるめて楽しめる、豊かな人生の味覚が手に入る。',
+                    '何年経っても「あいつがわさび引いたあの夜は最高だった」と仲間内で語り合える。',
+                    'ツーンとした刺激で涙腺が綺麗になり、コンタクトレンズの装着感が快適になる。',
+                    '「あの辛さに比べたら今の緊張なんて大したことない」と面談やプレゼンで堂々と話せる。',
+                    '激辛寿司を引き当てた幸運（？）により、その後のビンゴ大会で上位景品を当てる。',
+                    '素直にリアクションできる性格が評価され、目上の人から可愛がられるようになる。',
+                    '辛味のおかげで全身の毛穴が開き、お風呂上がりのような清々しい爽快感に包まれる。',
+                    '「わさび寿司の被害者の会」として仲間と盛り上がり、次回の食事会の日程がその場で決まる。',
+                    '刺激で眠気が綺麗さっぱり吹き飛び、夜の読書や勉強がゾーンに入ったように捗る。',
+                    'どんな想定外のハプニングにも「まあわさびよりはマシか」と笑って受け流せるようになる。',
+                    '自らハズレを引いて場を温めた功績が称えられ、次回幹事からスペシャルな席を用意してもらえる。',
+                    '何十年経っても「あの時のお前の顔最高だった」と語り合える一生モノの笑い話になる。',
+                    '辛さに耐えた後の深呼吸で、心身のバランスが完璧にリセットされる。',
+                    '「辛いけどオイシイ！」と叫んだことで、その場の全員が笑顔になる。',
+                    '刺激的な体験のおかげで、明日からの毎日が新鮮な気持ちでスタートできる。',
+                    'どんな料理も美味しく味わえる最強の味覚センサーが手に入る。',
+                    'ハズレをチャンスに変える瞬発力で、ビジネスや人間関係の成功をつかむ。'
+                ]
+            },
+            tea: {
+                id: 'tea',
+                name: '苦汁のセンブリ茶',
+                icon: 'fa-solid fa-mug-hot',
+                desc: '圧倒的な苦味を飲み干した猛者',
+                themeBg: 'bg-lime-50',
+                themeBorder: 'border-lime-400',
+                themeText: 'text-lime-600',
+                badgeGrad: 'bg-gradient-to-tr from-lime-400 via-green-300 to-lime-200',
+                tagBg: 'bg-lime-400',
+                baseOutcomes: [
+                    '尋常じゃない苦味のおかげで午後の強烈な眠気が完全に吹き飛び、締め切り当日の課題を余裕で提出できる。',
+                    'センブリ茶を飲み干した後の普通の水が異常に甘く美味しく感じられて、日常の小さな幸福感に包まれる。',
+                    '苦さに悶絶して叫んだことで喉が開き、カラオケでいつも出ない高音が出るようになる。',
+                    '胃腸がしっかり刺激されて消化が促され、その後のご飯がいつもの2倍美味しく食べられる。',
+                    '「激苦茶を飲み干した猛者」として語り継がれ、後輩から尊敬の眼差しで見られる。',
+                    '苦痛に耐え抜いた達成感でメンタルが強化され、苦手な相手への連絡がサラッと送れるようになる。',
+                    '生薬成分のデトックス作用によって、翌朝のお通じがびっくりするほど快調になる。',
+                    '悶絶した時の顔が愛嬌満点だったため、その場にいた友人たちから親しみを持たれる。',
+                    '苦味の限界を突破したことで、ブラックコーヒーやビターチョコの奥深い旨味がわかる大人舌に進化する。',
+                    '「良薬口に苦し」を身をもって体感したことで、健康への意識が急に高まり明日から野菜を食べるようになる。',
+                    '「センブリ茶を飲んだことがある」というレアな経験値がつき、雑談の引き出しが1つ増える。',
+                    'あの苦さに比べたら日常の面倒なタスクがすべてぬるいと思えてサクサク片付けられる。',
+                    '飲み干した瞬間に周囲から拍手喝采を浴び、ちょっとしたヒーロー気分を味わえる。',
+                    '口の中に残った苦味をかき消すために買ったコンビニスイーツが、人生最高レベルの美味しさに化ける。',
+                    '苦い顔を隠さず見せたことで気取らない性格が伝わり、初対面の人から話しやすいと好印象を持たれる。',
+                    '胃腸の血流が良くなったことで顔色が明るくなり、周りから「今日元気そうだね」と言われる。',
+                    'どんな理不尽なアクシデントが起きても「あのセンブリ茶よりはマシ」と冷静に対処できるようになる。',
+                    '罰ゲームを堂々と引き受ける姿勢が評価され、幹事やリーダーから信頼できると一目置かれる。',
+                    '苦味で五感が研ぎ澄まされ、帰りの夜風がやたら心地よく感じられて気分良く帰宅できる。',
+                    '「人生で一番苦かった思い出」として、誰とでも絶対に盛り上がれる鉄板トークの持ちネタが確定する。',
+                    '苦味成分が胃壁を刺激したことで食欲が正常化し、間食の衝動買いを自然と我慢できるようになる。',
+                    '悶絶しながらも飲み干した姿がカッコいいと評価され、気になる人からの印象が良くなる。',
+                    '口の中のネバつきや不快感が苦味で一掃され、驚くほど爽快な息が長時間キープされる。',
+                    '「あのお茶を飲み干した」という事実が小さな武勇伝になり、自分に自信が持てるようになる。',
+                    '苦い表情を見た友人が「お疲れさま」と温かいお茶を淹れてくれ、人の温もりに癒やされる。',
+                    '極度の苦味を体験したことで味覚の感度が上がり、料理の隠し味や出汁の深みがわかるようになる。',
+                    '眠気が跡形もなく消え去った勢いで、部屋のクローゼットの服をきれいに断捨離できる。',
+                    '「嫌な顔をせず楽しんだ」という器の広さが、周囲で高く評価される。',
+                    '苦さのあまり思いっきり顔を歪めたことで表情筋が刺激され、自然な笑顔が作りやすくなる。',
+                    '生薬のエキスで体内の巡りが良くなり、翌日の朝の身体の重だるさがスッキリ解消する。',
+                    '「センブリ茶の味をリアルに再現して語る」という小噺ができ、飲み会の人気者になれる。',
+                    '苦味に耐えた忍耐力が自信になり、面倒だった手続きや作業を一気に片付けられる。',
+                    '飲み干した後の達成感でドーパミンが分泌され、なぜか前向きでハッピーな気分になれる。',
+                    '「あいつは根性がある」と周囲に認知され、挑戦したかった大きな役割を任される。',
+                    '苦さに悶絶する動画をみんなで見返して大笑いし、グループの仲が一段と深まる。',
+                    '日常の些細なストレスに出くわしても「センブリ茶の苦さに比べれば天国」と笑顔で過ごせる。',
+                    '胃腸がリフレッシュされたことで肌荒れが落ち着き、肌のコンディションが良くなる。',
+                    '「激苦茶を飲んだ後のチョコの味」という知る人ぞ知る至福の瞬間を体験できる。',
+                    '自分のリアクションで場がドッと盛り上がったことで、人前で話すことの楽しさに目覚める。',
+                    '苦汁を飲み干す度胸を見せたことで、後輩から頼られる先輩になる。',
+                    '苦味で自律神経が刺激され、夜ベッドに入ってから3分で深い眠りに落ちることができる。',
+                    '「あんな苦いものを飲んだ自分なら何でもできる」と、新しい勉強や挑戦への意欲が湧く。',
+                    '周囲から「お前本当に面白い奴だな」と本気で褒められ、自分らしさに誇りが持てる。',
+                    '胃腸のデトックス効果で体が軽くなり、翌朝のジョギングやウォーキングが快適にこなせる。',
+                    '「苦い思い出」を文字通り笑い飛ばしたことで、過去の嫌な出来事への執着が綺麗に消える。',
+                    'センブリ茶の強烈なインパクトのおかげで、退屈だった一日が忘れられない特別な日に変わる。',
+                    '苦さに耐え抜いた顔を見た友人が、帰り際に「これあげる」と好きなお菓子をプレゼントしてくれる。',
+                    '生薬の力で体の芯からポカポカ温まり、冷え性で悩んでいた夜が快適に過ごせるようになる。',
+                    '「センブリ茶の苦さは本物だった」と自分の言葉で語れる一次情報の強みを手に入れる。',
+                    '何気ないお茶の時間が、人生をちょっと面白くするアトラクションへと昇華される。',
+                    '苦味で目がパッチリ開いたことで、夕方からの予定でハキハキ発言できる。',
+                    '「ハズレを引いてもこれだけ健康になれるならお得」と、逆転の発想が身につく。',
+                    '悶絶する姿を笑って受け止めてくれた仲間たちに、心からの愛着と安心感を抱けるようになる。',
+                    '苦さに耐えたことで舌の耐性がつき、どんな薬や漢方薬も平気で飲めるようになる。',
+                    '「あいつはいつでも全力で場を楽しんでくれる」と周囲から愛され、週末の予定が充実する。',
+                    '胃腸のコンディションが整ったことで、明日のランチの美味しいご飯を罪悪感なく楽しめる。',
+                    '苦い顔のリアクションが完璧だったと褒められ、次回イベントの盛り上げ役に指名される。',
+                    '強烈な苦味を乗り越えたことで、日常のちょっとした我慢や努力が苦にならなくなる。',
+                    '「あのセンブリ茶を飲んだ仲間」という特別な連帯感が生まれ、同期との絆が一生モノになる。',
+                    '口に残った苦味が消えていく過程で、日々の平穏と美味しいご飯のありがたみを再確認できる。',
+                    '苦味のショックで脳のモヤが晴れ、何日も悩んでいたアイデアの構成案がスラスラ書ける。',
+                    '「身体に良いことをした」という確信が持てて、健康的な生活習慣を始めるきっかけになる。',
+                    '悶絶しながら笑い転げた経験が、これからの人生で辛いことがあった時の心のクッションになる。',
+                    '「あの苦さは一生忘れない」と笑い合える思い出ができ、友人との会話のネタに困らなくなる。',
+                    '胃腸の働きが活発になったことで代謝が上がり、体が内側からスッキリ整う。',
+                    '苦痛を恐れずに挑戦したあなたの姿が、周囲の慎重な人たちに勇気と刺激を与える。',
+                    '「センブリ茶を飲んだ後の爽快感」という未知の快感を知り、好奇心の幅がさらに広がる。',
+                    '日常のルーティンに強烈なスパイスが加わり、明日からの毎日が少しだけ鮮やかに見え始める。',
+                    '不都合を自分から面白がりに行ったその度胸が、人生を能動的に楽しむ最強の武器になる。',
+                    '死ぬ瞬間に「あのお茶を飲んで笑い合ったあの日も最高だった」と振り返ることができる。',
+                    '苦味の衝撃で一瞬で背筋が伸び、猫背だった姿勢がシャキッと綺麗に整う。',
+                    '苦さを紛らわせるために飲んだ水が最高に美味しく、水分のありがたみに深く感謝できる。',
+                    '「激苦センブリ茶を笑顔で飲み干した人」として、サークルや社内での株が一気に上がる。',
+                    '胃腸が目覚めたことでお腹の張りが解消し、タイトな服もすっきり着こなせる。',
+                    '苦味に耐えた顔の写真がシュールで面白く、友達のスマホの待ち受け画面に採用される。',
+                    '「あの苦さを乗り切れた」という達成感から、苦手だった早起きがすんなりできるようになる。',
+                    '口の中の感覚がリセットされ、夜ご飯の素材本来の甘みや旨味が鮮明にわかる。',
+                    '不都合を面白がるあなたの姿に惹かれて、新しい友人から「今度遊びに行こう」と誘われる。',
+                    '尋常じゃない苦さのおかげで、溜まっていた日常のストレスがスカッと吹き飛ぶ。',
+                    '「苦いお茶を飲んだ時のベストなリアクション」を身につけ、飲み会での対応力が神レベルになる。',
+                    '生薬の有効成分で身体の巡りが良くなり、手足の冷えが気にならなくなる。',
+                    '苦さに悶絶しながらもピースサインを決めたことで、ノリの良さと度胸を絶賛される。',
+                    '「あのセンブリ茶を飲んだ猛者」という共通点で、初対面の人と一瞬で打ち解けられる。',
+                    '苦味で脳が完全に覚醒し、明日のタスクの段取りが5分で完璧に整理できる。',
+                    '面倒な仕事や手続きも「センブリ茶に比べたら天国」とサクサクこなせる無敵のメンタルになる。',
+                    '苦い顔を見せ合って大笑いした仲間たちと、かけがえのない一体感が生まれる。',
+                    '体内のデトックスが進んだおかげで、翌朝の肌のトーンがワントーン明るくなる。',
+                    '「ハズレ茶を引いても得しかない」というポジティブ変換力が一生の財産になる。',
+                    '苦味の余韻が消えた後の爽快感がたまらなく、クセになってまた飲みたくなる。',
+                    'どんなピンチも笑いに変えられるあなたの器の大きさに、後輩たちが憧れを抱く。',
+                    '苦さに耐えたご褒美として食べたスイーツが、これまでの人生で最も美味しく感じられる。',
+                    '胃腸の調子が整ったことで、明日の朝食が驚くほど美味しく食べられる。',
+                    '「あの苦いお茶を飲んだ日」として、カレンダーに刻まれる特別な記念日になる。',
+                    '恐れずに挑戦した度胸が評価され、やりたかった新しいプロジェクトのメンバーに抜擢される。',
+                    '苦い顔の写真を見返すたびにクスッと笑えて、嫌なことがあってもすぐに元気が湧いてくる。',
+                    '身体を張って場を盛り上げてくれた感謝として、同席者から次回のお茶代をご馳走してもらえる。',
+                    '苦汁を飲み干したことで肝が据わり、大事な商談や面接でも一切緊張しなくなる。',
+                    '「あのセンブリ茶の苦味」を語るエピソードトークが、鉄板のツカミとして一生使えるようになる。',
+                    '自らハズレに飛び込んだその勇気が、これからの人生で新しい一歩を踏み出す自信になる。',
+                    '死ぬ瞬間に「あのお茶を飲んで笑い転げた日も本当にオイシイ経験だった」と誇らしく振り返ることができる。',
+                    '胃腸の覚醒により代謝が爆上がりし、一日中元気いっぱいに活動できる。',
+                    '苦味で五感が冴え渡り、クリエイティブな制作活動のアイデアが無限に湧き出る。',
+                    '「身体に最高のご褒美をあげた」という満足感で、ポジティブなオーラに包まれる。',
+                    'どんな困難な課題も一気に飲み干す決断力と集中力が手に入る。',
+                    'アクシデントを自分の糧にする生き方で、最高にオイシイ未来を切り開く。'
+                ]
+            }
+        };
+
+        const CONTEXT_ILLUSTRATIONS = {
+            spark: `
+                <svg class="w-14 h-14 sm:w-16 sm:h-16" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="40" cy="36" r="18" fill="#facc15" stroke="#0f172a" stroke-width="4"/>
+                    <path d="M33 54 H47 V58 C47 61 43 63 40 63 C37 63 33 61 33 58 Z" fill="#ffffff" stroke="#0f172a" stroke-width="3.5"/>
+                    <line x1="40" y1="8" x2="40" y2="13" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="16" y1="20" x2="20" y2="24" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+                    <line x1="64" y1="20" x2="60" y2="24" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+                    <line x1="10" y1="36" x2="15" y2="36" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+                    <line x1="70" y1="36" x2="65" y2="36" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+                    <path d="M36 34 L39 26 L44 33 L40 42" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `,
+            heart: `
+                <svg class="w-14 h-14 sm:w-16 sm:h-16" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M40 66 C40 66 12 48 12 28 C12 18 20 12 30 12 C36 12 39 15 40 18 C41 15 44 12 50 12 C60 12 68 18 68 28 C68 48 40 66 40 66 Z" fill="#ff6b6b" stroke="#0f172a" stroke-width="4.5" stroke-linejoin="round"/>
+                    <circle cx="28" cy="28" r="2.5" fill="#0f172a"/>
+                    <circle cx="52" cy="28" r="2.5" fill="#0f172a"/>
+                    <path d="M34 38 Q40 44 46 38" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                </svg>
+            `,
+            rocket: `
+                <svg class="w-14 h-14 sm:w-16 sm:h-16" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M40 12 C40 12 56 22 56 46 L24 46 C24 22 40 12 40 12 Z" fill="#38bdf8" stroke="#0f172a" stroke-width="4" stroke-linejoin="round"/>
+                    <circle cx="40" cy="30" r="5" fill="#ffffff" stroke="#0f172a" stroke-width="3"/>
+                    <path d="M24 38 L14 48 L24 48 Z" fill="#facc15" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+                    <path d="M56 38 L66 48 L56 48 Z" fill="#facc15" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+                    <path d="M32 50 Q40 68 40 68 Q40 68 48 50 Z" fill="#ff6b6b" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+                </svg>
+            `,
+            crown: `
+                <svg class="w-14 h-14 sm:w-16 sm:h-16" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 54 L12 26 L28 36 L40 18 L52 36 L68 26 L64 54 Z" fill="#facc15" stroke="#0f172a" stroke-width="4.5" stroke-linejoin="round"/>
+                    <rect x="16" y="54" width="48" height="8" rx="2" fill="#ffffff" stroke="#0f172a" stroke-width="3.5"/>
+                    <circle cx="40" cy="18" r="3.5" fill="#ff6b6b" stroke="#0f172a" stroke-width="2"/>
+                    <circle cx="12" cy="26" r="3.5" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+                    <circle cx="68" cy="26" r="3.5" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+                </svg>
+            `,
+            sun: `
+                <svg class="w-14 h-14 sm:w-16 sm:h-16" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="40" cy="40" r="16" fill="#facc15" stroke="#0f172a" stroke-width="4"/>
+                    <line x1="40" y1="12" x2="40" y2="18" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="40" y1="62" x2="40" y2="68" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="12" y1="40" x2="18" y2="40" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="62" y1="40" x2="68" y2="40" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="20" y1="20" x2="25" y2="25" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="55" y1="55" x2="60" y2="60" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="20" y1="60" x2="25" y2="55" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="55" y1="25" x2="60" y2="20" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M34 40 Q40 45 46 40" stroke="#0f172a" stroke-width="3" stroke-linecap="round" fill="none"/>
+                </svg>
+            `
+        };
+
+        const CONTEXT_NUANCES = {
+            '学生・美大生': { action: '課題や進路のモヤモヤ', merit: 'クリエイティブな突破口と単位', illust: 'spark' },
+            'クリエイター': { action: '煮詰まっていた企画とデザイン', merit: '突き抜けた発想と案件の成功', illust: 'rocket' },
+            '会社員': { action: '週明けのタスクや人間関係', merit: 'スムーズな根回しと社内での確固たる信頼', illust: 'crown' },
+            'フリーランス': { action: '案件の進行や単価交渉の迷い', merit: '圧倒的な集中力と新規のオファー', illust: 'rocket' },
+            'その他': { action: '日常の些細なストレスや停滞感', merit: '最高のご機嫌と新しいチャレンジへの意欲', illust: 'sun' }
+        };
+
+        const AGE_PHRASES = {
+            '10代': '若さあふれる爆発力で',
+            '20代': '持ち前の軽快なフットワークで',
+            '30代': '培ってきた大人の対応力で',
+            '40代': '深みのある包容力と決断力で',
+            '50代〜': '肩肘張らない豊かな度量で'
+        };
+
+        let currentItemId = 'tarai';
+        let isUnlocked = false;
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playPopSound(type) {
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+
+                if (type === 'unlock') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.18);
+
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        const chimeOsc = audioCtx.createOscillator();
+                        const chimeGain = audioCtx.createGain();
+                        chimeOsc.type = 'sine';
+                        chimeOsc.frequency.setValueAtTime(freq, now + 0.12 + i * 0.08);
+                        chimeGain.gain.setValueAtTime(0.12, now + 0.12 + i * 0.08);
+                        chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12 + i * 0.08 + 0.4);
+                        chimeOsc.connect(chimeGain);
+                        chimeGain.connect(audioCtx.destination);
+                        chimeOsc.start(now + 0.12 + i * 0.08);
+                        chimeOsc.stop(now + 0.12 + i * 0.08 + 0.4);
+                    });
+                } else if (type === 'pop') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.06);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                }
+            } catch (e) {}
+        }
+
+        function navigateTo(targetViewId) {
+            playPopSound('pop');
+            const views = ['home-view', 'unlock-view', 'result-view', 'qr-sheet-view'];
+            
+            views.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el.classList.contains('hidden')) {
+                    el.classList.add('dissolve-hidden');
+                    setTimeout(() => {
+                        el.classList.add('hidden');
+                    }, 200);
+                }
+            });
+
+            setTimeout(() => {
+                const targetEl = document.getElementById(targetViewId);
+                targetEl.classList.remove('hidden');
+                void targetEl.offsetWidth;
+                targetEl.classList.remove('dissolve-hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 210);
+        }
+
+        function startExperience(id) {
+            setItemData(id);
+            isUnlocked = false;
+            document.getElementById('lock-icon-box').classList.remove('hidden', 'animate-big-unlock');
+            document.getElementById('achievement-badge-box').classList.add('hidden');
+            
+            navigateTo('unlock-view');
+            setTimeout(() => {
+                triggerUnlockAnimation();
+            }, 350);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            generateAllQRCodes();
+            checkUrlParams();
+        });
+
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const item = urlParams.get('item');
+            if (item && ITEMS[item]) {
+                startExperience(item);
+            }
+        }
+
+        function setItemData(id) {
+            currentItemId = id;
+            const data = ITEMS[id];
+
+            document.getElementById('badge-item-title').innerText = data.name;
+            document.getElementById('badge-item-icon').className = `${data.icon}`;
+            document.getElementById('badge-item-desc').innerText = data.desc;
+
+            // Sync color themes in Unlock View
+            const lockBox = document.getElementById('main-lock-box');
+            lockBox.className = `w-32 h-32 rounded-3xl border-3 border-slate-900 flex items-center justify-center text-5xl shadow-[6px_6px_0px_#0f172a] group-hover:scale-105 transition-transform ${data.themeBg} ${data.themeText}`;
+            
+            const mainLockIcon = document.getElementById('main-lock-icon');
+            mainLockIcon.className = `fa-solid fa-lock ${data.themeText}`;
+
+            const badgeCrownTag = document.getElementById('badge-crown-tag');
+            badgeCrownTag.className = `inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border-2 border-slate-900 text-slate-900 text-xs sm:text-sm font-black font-maru tracking-wider shadow-[2px_2px_0px_#0f172a] animate-bounce ${data.tagBg}`;
+
+            const badgeIconBox = document.getElementById('badge-item-icon-box');
+            badgeIconBox.className = `w-32 h-32 rounded-3xl border-3 border-slate-900 flex items-center justify-center text-5xl text-slate-900 shadow-[6px_6px_0px_#0f172a] animate-big-badge mt-1 ${data.badgeGrad}`;
+        }
+
+        function triggerUnlockAnimation() {
+            if (isUnlocked) return;
+            const lockBox = document.getElementById('lock-icon-box');
+            const badgeBox = document.getElementById('achievement-badge-box');
+            const mainLock = document.getElementById('main-lock-icon');
+            const data = ITEMS[currentItemId];
+
+            playPopSound('pop');
+            lockBox.classList.add('animate-big-unlock');
+            mainLock.className = `fa-solid fa-lock-open ${data.themeText}`;
+
+            // Unlock takes 1.5s
+            setTimeout(() => {
+                lockBox.classList.add('hidden');
+                badgeBox.classList.remove('hidden');
+                isUnlocked = true;
+
+                playPopSound('unlock');
+
+                try {
+                    confetti({
+                        particleCount: 80,
+                        spread: 70,
+                        origin: { y: 0.4 },
+                        colors: ['#38bdf8', '#34d399', '#a3e635', '#facc15', '#ff6b6b']
+                    });
+                } catch(e) {}
+
+            }, 1500);
+        }
+
+        function buildDynamicConclusion(itemId, gender, age, job) {
+            const n = CONTEXT_NUANCES[job] || CONTEXT_NUANCES['その他'];
+            const ageP = AGE_PHRASES[age] || '持ち前のフットワークで';
+
+            if (itemId === 'tarai') {
+                return `タライの衝撃で頭が強制覚醒した結果、抱えていた${n.action}が一撃で吹き飛び、${ageP}最高のリフレッシュと${n.merit}を両取りできます。`;
+            } else if (itemId === 'wasabi') {
+                return `わさびの辛さに悶絶した無防備な素顔が場を完全に和ませ、${n.action}を忘れるほどの一体感とともに、${ageP}${n.merit}をしっかり獲得できます。`;
+            } else {
+                return `尋常じゃない苦味を飲み干したことで胃腸と度胸が覚醒し、${n.action}をものともせず片付け、${ageP}${n.merit}を手に入れられます。`;
+            }
+        }
+
+        // Generate exactly 100 guaranteed outcomes
+        function generate100Outcomes(e) {
+            e.preventDefault();
+            playPopSound('pop');
+
+            const gender = document.getElementById('sel-gender').value;
+            const age = document.getElementById('sel-age').value;
+            const job = document.getElementById('sel-job').value;
+
+            const data = ITEMS[currentItemId];
+            const n = CONTEXT_NUANCES[job] || CONTEXT_NUANCES['その他'];
+            
+            document.getElementById('res-target-pill').innerText = `${data.name} × ${age}${gender} (${job})`;
+            
+            const illustType = n.illust || 'spark';
+            document.getElementById('res-dynamic-illustration').innerHTML = CONTEXT_ILLUSTRATIONS[illustType] || CONTEXT_ILLUSTRATIONS.spark;
+
+            const conclusionSentence = buildDynamicConclusion(currentItemId, gender, age, job);
+            document.getElementById('res-summary-one-sentence').innerText = conclusionSentence;
+
+            const contextualSeeds = [
+                `${data.name}を乗り切った勢いで、${job}として気になっていた${n.action}が驚くほどスムーズに解決する。`,
+                `自らハズレを引き受けた姿勢が評価され、${job}仲間からの信頼度が急上昇して相談役を任される。`,
+                `${age}ならではのノリの良さを発揮したことで、次回の楽しい集まりに真っ先に声をかけてもらえる。`,
+                `無防備なリアクションを見せたことで親しみやすさが爆発し、人間関係の壁が5秒で崩壊する。`,
+                `強烈な刺激のおかげで集中力が極限まで研ぎ澄まされ、今夜やるべき作業が一瞬で終わる。`
+            ];
+
+            const fullPool = [...contextualSeeds, ...data.baseOutcomes];
+            const final100 = fullPool.slice(0, 100);
+
+            let loopIndex = 0;
+            while (final100.length < 100) {
+                final100.push(`${data.name}の経験値により、これからの人生で起きるあらゆるハプニングがオイシイ成長のチャンスに変わる。（#${final100.length + 1}）`);
+                loopIndex++;
+            }
+
+            const container = document.getElementById('outcomes-container');
+            container.innerHTML = '';
+
+            final100.forEach((text, i) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white border-2 border-slate-900 rounded-2xl p-3.5 sm:p-4 flex items-start gap-3 transition-all shadow-[2px_2px_0px_#0f172a]';
+                card.innerHTML = `
+                    <span class="w-7 h-7 rounded-lg bg-amber-400 border border-slate-900 text-slate-900 font-en font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-[1px_1px_0px_#0f172a]">
+                        ${i + 1}
+                    </span>
+                    <p class="text-xs sm:text-sm text-slate-900 leading-relaxed font-bold">
+                        ${text}
+                    </p>
+                `;
+                container.appendChild(card);
+            });
+
+            navigateTo('result-view');
+        }
+
+        function copyAllOutcomes() {
+            playPopSound('pop');
+            const summary = document.getElementById('res-summary-one-sentence').innerText;
+            const items = [];
+            items.push(`【RESULT】${summary}`);
+            items.push('====================================');
+            document.querySelectorAll('#outcomes-container p').forEach((p, idx) => {
+                items.push(`${idx + 1}. ${p.innerText}`);
+            });
+            const text = items.join('\n');
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('100個のオイシイ未来をコピーしました！');
+            }).catch(() => {
+                prompt('以下をコピーしてください:', text);
+            });
+        }
+
+        function toggleQRSheet() {
+            const sheet = document.getElementById('qr-sheet-view');
+            if (sheet.classList.contains('hidden')) {
+                navigateTo('qr-sheet-view');
+            } else {
+                navigateTo('home-view');
+            }
+        }
+
+        function openFromQRSheet(id) {
+            startExperience(id);
+        }
+
+        function generateAllQRCodes() {
+            const baseUrl = window.location.href.split('?')[0];
+
+            ['tarai', 'wasabi', 'tea'].forEach(id => {
+                const el = document.getElementById(`qr-canvas-${id}`);
+                if (!el) return;
+                el.innerHTML = '';
+                const targetUrl = `${baseUrl}?item=${id}`;
+
+                new QRCode(el, {
+                    text: targetUrl,
+                    width: 140,
+                    height: 140,
+                    colorDark: '#0f172a',
+                    colorLight: '#f8fafc',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            });
+        }
+    </script>
+</body>
+</html>
